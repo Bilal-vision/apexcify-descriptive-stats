@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Iris — Descriptive Statistics</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #13131a;
+    --border:   #1e1e2e;
+    --accent:   #7fff6e;
+    --accent2:  #6eb5ff;
+    --accent3:  #ff8c6e;
+    --text:     #e8e8f0;
+    --muted:    #5a5a78;
+    --setosa:   #7fff6e;
+    --versicol: #6eb5ff;
+    --virginia: #ff8c6e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: .5;
+  }
+
+  .wrapper { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* ── header ── */
+  header { margin-bottom: 52px; }
+  .tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 3px 10px; border-radius: 2px; margin-bottom: 16px;
+    animation: fadein .5s ease both;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800; line-height: 1.05;
+    letter-spacing: -.02em;
+    animation: fadein .6s .1s ease both;
+  }
+  h1 span { color: var(--accent); }
+  .meta {
+    margin-top: 14px; color: var(--muted); font-size: 12px;
+    animation: fadein .6s .2s ease both;
+  }
+  .meta b { color: var(--accent2); font-weight: 400; }
+
+  /* ── stat cards row ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 40px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 18px;
+    animation: slidein .5s ease both;
+  }
+  .card:nth-child(1){animation-delay:.1s} .card:nth-child(2){animation-delay:.15s}
+  .card:nth-child(3){animation-delay:.2s} .card:nth-child(4){animation-delay:.25s}
+  .card-label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .card-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--accent); }
+  .card-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── section ── */
+  section { margin-bottom: 40px; animation: fadein .6s .3s ease both; }
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .15em;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  /* ── tables ── */
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #0f0f18; }
+  thead th {
+    padding: 10px 16px; text-align: right;
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #16161f; }
+  td {
+    padding: 9px 16px; text-align: right;
+    font-size: 12.5px; color: var(--text);
+  }
+  td:first-child { text-align: left; color: var(--accent2); font-weight: 500; }
+
+  /* species badge */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; letter-spacing: .05em;
+  }
+  .badge-setosa     { background: #7fff6e22; color: var(--setosa);   border: 1px solid #7fff6e44; }
+  .badge-versicolor { background: #6eb5ff22; color: var(--versicol); border: 1px solid #6eb5ff44; }
+  .badge-virginica  { background: #ff8c6e22; color: var(--virginia); border: 1px solid #ff8c6e44; }
+
+  /* ── mini bar ── */
+  .bar-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .bar-bg { width: 70px; height: 5px; background: var(--border); border-radius: 9px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 9px; background: var(--accent); }
+
+  /* ── head table monospace values ── */
+  .mono { font-family: 'DM Mono', monospace; }
+
+  /* ── animations ── */
+  @keyframes fadein { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+  @keyframes slidein { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:none } }
+
+  /* ── footer ── */
+  footer { margin-top: 60px; text-align: center; color: var(--muted); font-size: 11px; letter-spacing: .1em; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="tag">🌸 Iris Dataset · sklearn</div>
+    <h1>Descriptive<br/><span>Statistics</span></h1>
+    <p class="meta">
+      Shape: <b>{{ stats.shape[0] }} rows × {{ stats.shape[1] }} cols</b>
+      &nbsp;·&nbsp; Columns: <b>{{ stats.columns | join(', ') }}</b>
+    </p>
+  </header>
+
+  <!-- Stat Cards -->
+  <div class="cards">
+    {% set cols = ['sepal_length','sepal_width','petal_length','petal_width'] %}
+    {% set labels = ['Sepal Length','Sepal Width','Petal Length','Petal Width'] %}
+    {% set colors = ['#7fff6e','#6eb5ff','#ff8c6e','#c87fff'] %}
+    {% for i in range(4) %}
+    {% set col = cols[i] %}
+    <div class="card">
+      <div class="card-label">{{ labels[i] }}</div>
+      <div class="card-value" style="color:{{ colors[i] }}">
+        {{ stats.manual.loc[col, 'Mean'] }}
+      </div>
+      <div class="card-sub">
+        mean &nbsp;·&nbsp; std {{ stats.manual.loc[col, 'Std Dev'] }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- df.describe() -->
+  <section>
+    <div class="section-title">df.describe() — full summary</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>stat</th>
+            {% for col in stats.describe.columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in stats.describe.index %}
+          <tr>
+            <td>{{ row }}</td>
+            {% for col in stats.describe.columns %}
+            <td>{{ stats.describe.loc[row, col] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Manual Stats -->
+  <section>
+    <div class="section-title">manual calculations</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>column</th>
+            {% for col in stats.manual.columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+            <th>range visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in stats.manual.index %}
+          <tr>
+            <td>{{ row }}</td>
+            {% for col in stats.manual.columns %}
+            <td>{{ stats.manual.loc[row, col] }}</td>
+            {% endfor %}
+            <td>
+              {% set mn = stats.manual.loc[row, 'Min'] %}
+              {% set mx = stats.manual.loc[row, 'Max'] %}
+              {% set pct = ((stats.manual.loc[row, 'Mean'] - mn) / (mx - mn) * 100) | round(1) %}
+              <div class="bar-wrap">
+                <span style="color:var(--muted);font-size:11px">{{ mn }}</span>
+                <div class="bar-bg"><div class="bar-fill" style="width:{{ pct }}%"></div></div>
+                <span style="color:var(--muted);font-size:11px">{{ mx }}</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Groupby -->
+  <section>
+    <div class="section-title">mean per species — groupby</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>species</th>
+            {% for col in stats.groupby.columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for species in stats.groupby.index %}
+          <tr>
+            <td>
+              <span class="badge badge-{{ species }}">{{ species }}</span>
+            </td>
+            {% for col in stats.groupby.columns %}
+            <td>{{ stats.groupby.loc[species, col] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- First 5 Rows -->
+  <section>
+    <div class="section-title">df.head() — first 5 rows</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            {% for col in stats.head.columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for _, row in stats.head.iterrows() %}
+          <tr>
+            {% for col in stats.head.columns %}
+            <td>
+              {% if col == 'species' %}
+              <span class="badge badge-{{ row[col] }}">{{ row[col] }}</span>
+              {% else %}
+              {{ row[col] }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>DESCRIPTIVE STATISTICS · IRIS DATASET · PYTHON + FLASK</footer>
+</div>
+</body>
+</html>
